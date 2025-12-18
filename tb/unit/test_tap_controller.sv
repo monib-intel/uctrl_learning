@@ -104,10 +104,20 @@ module test_tap_controller;
         @(posedge TCK);
         TDI = 1;
         TMS = 0;  // Stay in SHIFT-DR
+        @(negedge TCK);
+        // TDO should still be 0 (previous BYPASS value)
+        if (TDO == 0) begin
+            $display("[Test 3] First shift: TDO=0 (previous value) - correct");
+        end else begin
+            $display("[Test 3] FAIL - Expected TDO=0, got TDO=%b", TDO);
+        end
         @(posedge TCK);
-        @(posedge TCK);
+        TDI = 0;
+        TMS = 1;  // Exit SHIFT-DR
+        @(negedge TCK);
+        // Now TDO should be 1 (the value we shifted in)
         if (TDO == 1) begin
-            $display("[Test 3] PASS - BYPASS shifted correctly");
+            $display("[Test 3] PASS - BYPASS shifted correctly, TDO=1");
         end else begin
             $display("[Test 3] FAIL - BYPASS expected TDO=1, got TDO=%b", TDO);
         end
@@ -255,9 +265,7 @@ module test_tap_controller;
     // Go to RUN-TEST-IDLE state
     task goto_idle();
         @(posedge TCK);
-        TMS = 0;
-        @(posedge TCK);
-        TMS = 0;
+        TMS = 0;  // From TEST-LOGIC-RESET to RUN-TEST-IDLE (or stay in RUN-TEST-IDLE)
         @(posedge TCK);
     endtask
 
