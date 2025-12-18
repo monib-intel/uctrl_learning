@@ -201,7 +201,7 @@ module test_apb_interconnect;
         end else begin
             if (s0_psel && s0_penable) begin
                 s0_pready  <= 1'b1;
-                s0_prdata  <= 32'hA000_0000 | s0_paddr[ROM_ADDR_WIDTH:0];
+                s0_prdata  <= 32'hA000_0000 | s0_paddr[ROM_ADDR_WIDTH-1:0];
                 s0_pslverr <= 1'b0;
             end else begin
                 s0_pready  <= 1'b0;
@@ -221,7 +221,7 @@ module test_apb_interconnect;
         end else begin
             if (s1_psel && s1_penable) begin
                 s1_pready  <= 1'b1;
-                s1_prdata  <= 32'hB000_0000 | s1_paddr[FLASH_ADDR_WIDTH:0];
+                s1_prdata  <= 32'hB000_0000 | s1_paddr[FLASH_ADDR_WIDTH-1:0];
                 s1_pslverr <= 1'b0;
             end else begin
                 s1_pready  <= 1'b0;
@@ -241,7 +241,7 @@ module test_apb_interconnect;
         end else begin
             if (s2_psel && s2_penable) begin
                 s2_pready  <= 1'b1;
-                s2_prdata  <= 32'hC000_0000 | s2_paddr[SRAM_ADDR_WIDTH:0];
+                s2_prdata  <= 32'hC000_0000 | s2_paddr[SRAM_ADDR_WIDTH-1:0];
                 s2_pslverr <= 1'b0;
             end else begin
                 s2_pready  <= 1'b0;
@@ -261,7 +261,7 @@ module test_apb_interconnect;
         end else begin
             if (s3_psel && s3_penable) begin
                 s3_pready  <= 1'b1;
-                s3_prdata  <= 32'hD000_0000 | s3_paddr[CTRL_ADDR_WIDTH:0];
+                s3_prdata  <= 32'hD000_0000 | s3_paddr[CTRL_ADDR_WIDTH-1:0];
                 s3_pslverr <= 1'b0;
             end else begin
                 s3_pready  <= 1'b0;
@@ -281,7 +281,7 @@ module test_apb_interconnect;
         end else begin
             if (s4_psel && s4_penable) begin
                 s4_pready  <= 1'b1;
-                s4_prdata  <= 32'hE000_0000 | s4_paddr[DIAG_ADDR_WIDTH:0];
+                s4_prdata  <= 32'hE000_0000 | s4_paddr[DIAG_ADDR_WIDTH-1:0];
                 s4_pslverr <= 1'b0;
             end else begin
                 s4_pready  <= 1'b0;
