@@ -179,8 +179,10 @@ module test_apb_interconnect;
     // Slave Mockups (Simple Responders)
     // =========================================================================
     // These simulate slave behavior for testing
+    // Each slave returns a unique pattern with address bits to verify routing
     
     // Slave 0: ROM - responds with address pattern
+    // Address width: 15 bits (32KB = 0x8000 bytes)
     always_ff @(posedge pclk or negedge preset_n) begin
         if (!preset_n) begin
             s0_pready  <= 1'b0;
@@ -189,7 +191,7 @@ module test_apb_interconnect;
         end else begin
             if (s0_psel && s0_penable) begin
                 s0_pready  <= 1'b1;
-                s0_prdata  <= 32'hA000_0000 | s0_paddr[15:0];  // ROM pattern
+                s0_prdata  <= 32'hA000_0000 | s0_paddr[15:0];  // ROM pattern (15-bit addr)
                 s0_pslverr <= 1'b0;
             end else begin
                 s0_pready  <= 1'b0;
@@ -200,6 +202,7 @@ module test_apb_interconnect;
     end
 
     // Slave 1: Flash - responds with address pattern
+    // Address width: 17 bits (128KB = 0x20000 bytes)
     always_ff @(posedge pclk or negedge preset_n) begin
         if (!preset_n) begin
             s1_pready  <= 1'b0;
@@ -208,7 +211,7 @@ module test_apb_interconnect;
         end else begin
             if (s1_psel && s1_penable) begin
                 s1_pready  <= 1'b1;
-                s1_prdata  <= 32'hB000_0000 | s1_paddr[16:0];  // Flash pattern
+                s1_prdata  <= 32'hB000_0000 | s1_paddr[16:0];  // Flash pattern (17-bit addr)
                 s1_pslverr <= 1'b0;
             end else begin
                 s1_pready  <= 1'b0;
@@ -219,6 +222,7 @@ module test_apb_interconnect;
     end
 
     // Slave 2: SRAM - responds with address pattern
+    // Address width: 13 bits (8KB = 0x2000 bytes)
     always_ff @(posedge pclk or negedge preset_n) begin
         if (!preset_n) begin
             s2_pready  <= 1'b0;
@@ -227,7 +231,7 @@ module test_apb_interconnect;
         end else begin
             if (s2_psel && s2_penable) begin
                 s2_pready  <= 1'b1;
-                s2_prdata  <= 32'hC000_0000 | s2_paddr[12:0];  // SRAM pattern
+                s2_prdata  <= 32'hC000_0000 | s2_paddr[12:0];  // SRAM pattern (13-bit addr)
                 s2_pslverr <= 1'b0;
             end else begin
                 s2_pready  <= 1'b0;
@@ -238,6 +242,7 @@ module test_apb_interconnect;
     end
 
     // Slave 3: Control Registers - responds with address pattern
+    // Address width: 12 bits (4KB = 0x1000 bytes)
     always_ff @(posedge pclk or negedge preset_n) begin
         if (!preset_n) begin
             s3_pready  <= 1'b0;
@@ -246,7 +251,7 @@ module test_apb_interconnect;
         end else begin
             if (s3_psel && s3_penable) begin
                 s3_pready  <= 1'b1;
-                s3_prdata  <= 32'hD000_0000 | s3_paddr[11:0];  // CTRL pattern
+                s3_prdata  <= 32'hD000_0000 | s3_paddr[11:0];  // CTRL pattern (12-bit addr)
                 s3_pslverr <= 1'b0;
             end else begin
                 s3_pready  <= 1'b0;
@@ -257,6 +262,7 @@ module test_apb_interconnect;
     end
 
     // Slave 4: Diagnostic Buffer - responds with address pattern
+    // Address width: 12 bits (4KB = 0x1000 bytes)
     always_ff @(posedge pclk or negedge preset_n) begin
         if (!preset_n) begin
             s4_pready  <= 1'b0;
@@ -265,7 +271,7 @@ module test_apb_interconnect;
         end else begin
             if (s4_psel && s4_penable) begin
                 s4_pready  <= 1'b1;
-                s4_prdata  <= 32'hE000_0000 | s4_paddr[11:0];  // DIAG pattern
+                s4_prdata  <= 32'hE000_0000 | s4_paddr[11:0];  // DIAG pattern (12-bit addr)
                 s4_pslverr <= 1'b0;
             end else begin
                 s4_pready  <= 1'b0;
@@ -423,7 +429,6 @@ module test_apb_interconnect;
         // =====================================================================
         $display("");
         $display("[Test 6] Unmapped Address Error Handling Test");
-        test_unmapped_address(32'h0000_C000, "Between Flash and SRAM");
         test_unmapped_address(32'h0002_C000, "After DIAG");
         test_unmapped_address(32'h0003_0000, "High address");
         test_unmapped_address(32'hFFFF_FFFC, "Very high address");

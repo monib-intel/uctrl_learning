@@ -163,11 +163,12 @@ module apb_interconnect (
     // Slave Port Assignments
     // =========================================================================
     // Broadcast address, write data, and strobe to all slaves
-    // Select signal is gated by address decode
+    // Use registered selection for psel to maintain stability during transaction
+    // penable is gated by both m_penable and registered selection
     
     // ROM (Slave 0)
     assign s0_paddr   = m_paddr;
-    assign s0_psel    = slave_sel[0];
+    assign s0_psel    = m_psel && (slave_sel[0] || slave_sel_reg[0]);
     assign s0_penable = m_penable && slave_sel_reg[0];
     assign s0_pwrite  = m_pwrite;
     assign s0_pwdata  = m_pwdata;
@@ -175,7 +176,7 @@ module apb_interconnect (
 
     // Flash (Slave 1)
     assign s1_paddr   = m_paddr;
-    assign s1_psel    = slave_sel[1];
+    assign s1_psel    = m_psel && (slave_sel[1] || slave_sel_reg[1]);
     assign s1_penable = m_penable && slave_sel_reg[1];
     assign s1_pwrite  = m_pwrite;
     assign s1_pwdata  = m_pwdata;
@@ -183,7 +184,7 @@ module apb_interconnect (
 
     // SRAM (Slave 2)
     assign s2_paddr   = m_paddr;
-    assign s2_psel    = slave_sel[2];
+    assign s2_psel    = m_psel && (slave_sel[2] || slave_sel_reg[2]);
     assign s2_penable = m_penable && slave_sel_reg[2];
     assign s2_pwrite  = m_pwrite;
     assign s2_pwdata  = m_pwdata;
@@ -191,7 +192,7 @@ module apb_interconnect (
 
     // Control Registers (Slave 3)
     assign s3_paddr   = m_paddr;
-    assign s3_psel    = slave_sel[3];
+    assign s3_psel    = m_psel && (slave_sel[3] || slave_sel_reg[3]);
     assign s3_penable = m_penable && slave_sel_reg[3];
     assign s3_pwrite  = m_pwrite;
     assign s3_pwdata  = m_pwdata;
@@ -199,7 +200,7 @@ module apb_interconnect (
 
     // Diagnostic Buffer (Slave 4)
     assign s4_paddr   = m_paddr;
-    assign s4_psel    = slave_sel[4];
+    assign s4_psel    = m_psel && (slave_sel[4] || slave_sel_reg[4]);
     assign s4_penable = m_penable && slave_sel_reg[4];
     assign s4_pwrite  = m_pwrite;
     assign s4_pwdata  = m_pwdata;
