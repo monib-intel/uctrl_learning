@@ -155,7 +155,8 @@ module test_rom_controller;
 
         // Test 7: Normal operation after MBIST
         $display("\n[Test 7] Testing normal operation after MBIST");
-        test_read_addr(15'h0000, 32'h0);  // After MBIST, memory should contain test pattern
+        test_read_addr(15'h0000, 32'hDEAD_0000);  // ROM content unchanged (read-only)
+        test_read_addr(15'h0004, 32'hDEAD_0001);  // Verify multiple addresses
         
         $display("\n=== All Tests Completed ===");
         #100;
