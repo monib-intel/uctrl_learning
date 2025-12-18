@@ -122,11 +122,13 @@ module clock_reset_manager (
     // ICG enable logic: gate when enabled AND not in test mode
     assign icg_enable = clk_gate_en && !test_mode;
     
-    // Latch enable on low phase of clock to avoid glitches
+    // Latch enable on negative edge to avoid glitches
     // This is a simplified ICG implementation - in real design, use vendor ICG cells
-    always_latch begin
-        if (!clk_cpu_pre_gate) begin
-            icg_enable_latched = icg_enable;
+    always_ff @(negedge clk_cpu_pre_gate or negedge por_n) begin
+        if (!por_n) begin
+            icg_enable_latched <= 1'b0;
+        end else begin
+            icg_enable_latched <= icg_enable;
         end
     end
     
@@ -237,8 +239,8 @@ module clock_reset_manager (
     end
     assign rst_cold_n = rst_cold_sync[1];
     
-    // CPU reset synchronizer (clocked by clk_cpu)
-    always_ff @(posedge clk_cpu or negedge rst_cpu_async) begin
+    // CPU reset synchronizer (clocked by clk_cpu_pre_gate to avoid gating issues)
+    always_ff @(posedge clk_cpu_pre_gate or negedge rst_cpu_async) begin
         if (!rst_cpu_async) begin
             rst_cpu_sync <= 2'b00;
         end else begin
