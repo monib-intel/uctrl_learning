@@ -7,6 +7,9 @@
 
 module test_rom_controller;
 
+    // Test parameters
+    localparam int MBIST_TIMEOUT_CYCLES = 20000;  // Maximum cycles to wait for MBIST completion
+
     // Clock and reset
     logic        clk;
     logic        rst_n;
@@ -60,8 +63,9 @@ module test_rom_controller;
 
         $display("=== ROM Controller Test Started ===");
 
-        // Test 1: Initialize ROM with test data
-        $display("\n[Test 1] Initializing ROM with test pattern");
+        // Test 1: Initialize ROM with test data using backdoor access
+        // Note: In a real testbench, this would be done via ROM_INIT_FILE
+        $display("\n[Test 1] Initializing ROM with test pattern (backdoor access for testing)");
         for (int i = 0; i < 100; i++) begin
             dut.rom_mem[i] = 32'hDEAD_0000 + i;
         end
@@ -142,7 +146,7 @@ module test_rom_controller;
                 end
             end
             begin
-                repeat(20000) @(posedge clk);
+                repeat(MBIST_TIMEOUT_CYCLES) @(posedge clk);
                 $display("[Test 6] TIMEOUT - MBIST did not complete in time");
                 $fatal(1, "MBIST timeout");
             end

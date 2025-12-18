@@ -13,7 +13,7 @@ module rom_controller (
 
     // Memory Access Interface
     input  logic        rom_req,           // Access request
-    input  logic [14:0] rom_addr,          // Address (32KB, word-aligned)
+    input  logic [14:0] rom_addr,          // Byte address (must be word-aligned)
     output logic [31:0] rom_rdata,         // Read data
     output logic        rom_ready,         // Data valid (1-cycle after req)
 
@@ -24,7 +24,8 @@ module rom_controller (
 );
 
     // Memory array: 32 KB = 8K words x 32 bits
-    // Address [14:0] provides word addressing for 8K words (2^13 = 8192 words)
+    // rom_addr[14:0] is a byte address
+    // Word address is extracted as rom_addr[14:2] (13 bits for 8K words)
     localparam int ROM_DEPTH = 8192;       // 8K words
     localparam int ADDR_WIDTH = 13;        // Word address width
 
