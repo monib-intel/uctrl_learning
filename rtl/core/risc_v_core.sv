@@ -85,6 +85,9 @@ module risc_v_core (
     // WFI (Wait For Interrupt) state
     logic wfi_state;
     
+    // Constants
+    localparam WFI_IMM = 32'h105;  // WFI instruction immediate value
+    
     // =========================================================================
     // Instruction Decode
     // =========================================================================
@@ -131,7 +134,7 @@ module risc_v_core (
     always_ff @(posedge clk or negedge rst_n) begin
         if (!rst_n) begin
             pc_reg <= 32'h0000_0000;
-        end else if (!scan_mode && fetch_enable && !stall && !wfi_state) begin
+        end else if (!scan_mode && fetch_enable && !stall && !wfi_state && imem_ready) begin
             pc_reg <= pc_next;
         end
     end
@@ -192,6 +195,10 @@ module risc_v_core (
     // Control Logic
     // =========================================================================
     
+    // Intermediate signals to avoid combinational loops
+    logic [31:0] mem_addr_temp;
+    logic        dmem_stall;
+    
     always_comb begin
         // Default values
         alu_op1 = rs1_data;
@@ -208,7 +215,8 @@ module risc_v_core (
         dmem_be = 4'b0000;
         dmem_addr = 32'd0;
         dmem_wdata = 32'd0;
-        stall = 1'b0;
+        dmem_stall = 1'b0;
+        mem_addr_temp = rs1_data + imm_i;  // Pre-calculate memory address
         
         case (opcode)
             7'b0110011: begin // R-type
@@ -225,7 +233,7 @@ module risc_v_core (
                 alu_op2 = imm_i;
                 mem_read = 1'b1;
                 dmem_req = 1'b1;
-                dmem_addr = alu_result;
+                dmem_addr = mem_addr_temp;
                 reg_write_en = 1'b1;
                 
                 // Load data based on funct3
@@ -238,7 +246,7 @@ module risc_v_core (
                     default: reg_write_data = dmem_rdata;
                 endcase
                 
-                if (!dmem_ready) stall = 1'b1;
+                if (!dmem_ready) dmem_stall = 1'b1;
             end
             
             7'b0100011: begin // STORE
@@ -246,18 +254,18 @@ module risc_v_core (
                 mem_write = 1'b1;
                 dmem_req = 1'b1;
                 dmem_we = 1'b1;
-                dmem_addr = alu_result;
+                dmem_addr = mem_addr_temp;
                 dmem_wdata = rs2_data;
                 
                 // Store byte enable based on funct3
                 case (funct3)
-                    3'b000: dmem_be = 4'b0001 << alu_result[1:0]; // SB
-                    3'b001: dmem_be = 4'b0011 << alu_result[1:0]; // SH
-                    3'b010: dmem_be = 4'b1111;                     // SW
+                    3'b000: dmem_be = 4'b0001 << mem_addr_temp[1:0]; // SB
+                    3'b001: dmem_be = 4'b0011 << mem_addr_temp[1:0]; // SH
+                    3'b010: dmem_be = 4'b1111;                        // SW
                     default: dmem_be = 4'b0000;
                 endcase
                 
-                if (!dmem_ready) stall = 1'b1;
+                if (!dmem_ready) dmem_stall = 1'b1;
             end
             
             7'b1100011: begin // BRANCH
@@ -300,7 +308,7 @@ module risc_v_core (
             end
             
             7'b1110011: begin // SYSTEM
-                if (funct3 == 3'b000 && imm_i == 32'h105) begin
+                if (funct3 == 3'b000 && imm_i == WFI_IMM) begin
                     // WFI instruction - enter sleep state
                     // Will be handled by wfi_state logic
                 end
@@ -316,8 +324,11 @@ module risc_v_core (
     // Instruction Fetch Control
     // =========================================================================
     
-    assign imem_req = fetch_enable && !stall && !wfi_state && !scan_mode;
+    assign imem_req = fetch_enable && !wfi_state && !scan_mode;
     assign imem_addr = pc_reg;
+    
+    // Stall condition combining imem and dmem stalls
+    assign stall = (!imem_ready && imem_req) || dmem_stall;
     
     // =========================================================================
     // WFI (Wait For Interrupt) State
@@ -327,7 +338,7 @@ module risc_v_core (
         if (!rst_n) begin
             wfi_state <= 1'b0;
         end else if (!scan_mode) begin
-            if (opcode == 7'b1110011 && funct3 == 3'b000 && imm_i == 32'h105) begin
+            if (opcode == 7'b1110011 && funct3 == 3'b000 && imm_i == WFI_IMM) begin
                 wfi_state <= 1'b1; // Enter WFI
             end else if (|irq || debug_req) begin
                 wfi_state <= 1'b0; // Exit WFI on interrupt or debug
@@ -338,19 +349,6 @@ module risc_v_core (
     assign core_sleep = wfi_state;
     
     // =========================================================================
-    // Interrupt Handling (Basic)
-    // =========================================================================
-    
-    // Note: Full interrupt handling would require CSRs and machine mode implementation
-    // This is a simplified version for basic IRQ[0] support
-    always_comb begin
-        if (|irq && !wfi_state && fetch_enable) begin
-            // Simple interrupt handling: could jump to handler
-            // For minimal implementation, just exit WFI state
-        end
-    end
-    
-    // =========================================================================
     // DFT Scan Chain
     // =========================================================================
     
@@ -358,8 +356,10 @@ module risc_v_core (
     // In a full implementation, this would chain through all flip-flops
     logic [31:0] scan_chain;
     
-    always_ff @(posedge clk) begin
-        if (scan_mode && scan_en) begin
+    always_ff @(posedge clk or negedge rst_n) begin
+        if (!rst_n) begin
+            scan_chain <= 32'd0;
+        end else if (scan_mode && scan_en) begin
             scan_chain <= {scan_in, scan_chain[31:1]};
         end
     end
