@@ -122,9 +122,11 @@ module rom_controller (
                     mbist_prev_data     <= mbist_read_data_reg;
                     mbist_read_data_reg <= rom_mem[mbist_addr];
                     
-                    mbist_addr <= mbist_addr + 1;
                     if (mbist_addr == ROM_DEPTH - 1) begin
                         mbist_state <= MBIST_MARCH_DOWN;
+                        mbist_addr  <= ROM_DEPTH - 1;  // Start march down from last address
+                    end else begin
+                        mbist_addr <= mbist_addr + 1;
                     end
                 end
 
@@ -133,9 +135,11 @@ module rom_controller (
                     mbist_prev_data     <= mbist_read_data_reg;
                     mbist_read_data_reg <= rom_mem[mbist_addr];
                     
-                    mbist_addr <= mbist_addr - 1;
                     if (mbist_addr == 0) begin
                         mbist_state <= MBIST_VERIFY;
+                        mbist_addr  <= 0;  // Start verify from first address
+                    end else begin
+                        mbist_addr <= mbist_addr - 1;
                     end
                 end
 
@@ -144,9 +148,10 @@ module rom_controller (
                     mbist_prev_data     <= mbist_read_data_reg;
                     mbist_read_data_reg <= rom_mem[mbist_addr];
                     
-                    mbist_addr <= mbist_addr + 1;
                     if (mbist_addr == ROM_DEPTH - 1) begin
                         mbist_state <= MBIST_DONE;
+                    end else begin
+                        mbist_addr <= mbist_addr + 1;
                     end
                 end
 
