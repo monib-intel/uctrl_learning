@@ -307,15 +307,15 @@ module test_tap_controller;
         goto_shift_ir();
         
         for (int i = 0; i < 4; i++) begin
-            @(posedge TCK);
             TDI = instruction[i];
             TMS = (i == 3) ? 1 : 0;  // Exit on last bit
+            @(posedge TCK);
         end
         
-        // Update-IR
-        @(posedge TCK);
+        // Now in EXIT1-IR, go to UPDATE-IR
         TMS = 1;  // Go to UPDATE-IR
         @(posedge TCK);
+        // Now in UPDATE-IR, go to RUN-TEST-IDLE
         TMS = 0;  // Go to RUN-TEST-IDLE
         @(posedge TCK);
     endtask
@@ -325,15 +325,15 @@ module test_tap_controller;
         goto_shift_dr();
         
         for (int i = 0; i < 32; i++) begin
-            @(posedge TCK);
             TDI = data[i];
             TMS = (i == 31) ? 1 : 0;  // Exit on last bit
+            @(posedge TCK);
         end
         
-        // Update-DR
-        @(posedge TCK);
+        // Now in EXIT1-DR, go to UPDATE-DR
         TMS = 1;  // Go to UPDATE-DR
         @(posedge TCK);
+        // Now in UPDATE-DR, go to RUN-TEST-IDLE
         TMS = 0;  // Go to RUN-TEST-IDLE
         @(posedge TCK);
     endtask
@@ -343,17 +343,17 @@ module test_tap_controller;
         goto_shift_dr();
         
         for (int i = 0; i < 32; i++) begin
-            @(posedge TCK);
             TDI = 0;
             TMS = (i == 31) ? 1 : 0;  // Exit on last bit
+            @(posedge TCK);
             @(negedge TCK);
             result[i] = TDO;
         end
         
-        // Update-DR
-        @(posedge TCK);
+        // Now in EXIT1-DR, go to UPDATE-DR
         TMS = 1;  // Go to UPDATE-DR
         @(posedge TCK);
+        // Now in UPDATE-DR, go to RUN-TEST-IDLE
         TMS = 0;  // Go to RUN-TEST-IDLE
         @(posedge TCK);
     endtask
