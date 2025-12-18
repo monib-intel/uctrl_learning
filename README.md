@@ -7,52 +7,71 @@ The DFT Test Control Processor is an embedded system-on-chip component that orch
 
 **Core Value Proposition:** Reduce ATE dependency and test time by moving test intelligence on-die while ensuring the controller itself remains testable through standard DFT flows.
 
+**Related Documentation:**
+- [Microarchitecture Specification](uarchitecture.md) - Detailed RTL design, interfaces, clocking/reset, and memory subsystem
+- [Build System Guide](BUILD.md) - Development environment setup, simulation, and testing
+
+**Quick Start:**
+```bash
+# Enter development environment (Nix)
+nix develop
+
+# Create directory structure
+make setup
+
+# View available commands
+make help
+
+# Verify environment
+./scripts/verify_env.sh
+```
+
 ---
 
 ### 2. System Architecture
 #### 2.0 Block Diagram
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                    DFT Test Control Processor                    │
-│                                                                   │
-│  ┌──────────────┐  ┌──────────────┐  ┌────────────────────┐    │
-│  │  RISC-V Core │  │ Pattern ROM/ │  │  Sequencer/Sched   │    │
-│  │   (or FSM)   │──│    Flash     │──│   (SSN-aware)      │    │
-│  └──────────────┘  └──────────────┘  └────────────────────┘    │
-│         │                                      │                 │
-│         │                                      │                 │
+│                    DFT Test Control Processor                   │
+│                                                                 │
+│  ┌──────────────┐  ┌──────────────┐  ┌────────────────────┐     │
+│  │  RISC-V Core │  │ Pattern ROM/ │  │  Sequencer/Sched   │     │
+│  │   (or FSM)   │──│    Flash     │──│   (SSN-aware)      │     │
+│  └──────────────┘  └──────────────┘  └────────────────────┘     │
+│         │                                      │                │
+│         │                                      │                │
 │  ┌──────┴──────────────────────────────────────┴──────┐         │
-│  │           Test Mode Controller & Arbiter            │         │
+│  │           Test Mode Controller & Arbiter            │        │
 │  │    (ATPG/MBIST/LBIST/Analog coordination)          │         │
 │  └──────┬──────────────────────────────────────┬──────┘         │
-│         │                                      │                 │
-│  ┌──────┴──────┐  ┌──────────────┐  ┌────────┴─────────┐       │
-│  │ Power/Clock │  │   Security   │  │  Diagnostics     │       │
-│  │   Manager   │  │ Lock Manager │  │  Collector       │       │
-│  └──────┬──────┘  └──────┬───────┘  └────────┬─────────┘       │
+│         │                                      │                │
+│  ┌──────┴──────┐  ┌──────────────┐  ┌────────┴─────────┐        │
+│  │ Power/Clock │  │   Security   │  │  Diagnostics     │        │
+│  │   Manager   │  │ Lock Manager │  │  Collector       │        │
+│  └──────┬──────┘  └──────┬───────┘  └────────┬─────────┘        │
 └─────────┼─────────────────┼───────────────────┼─────────────────┘
           │                 │                   │
           │                 │                   │
 ┌─────────┼─────────────────┼───────────────────┼─────────────────┐
-│         ▼                 ▼                   ▼                  │
-│  ┌─────────────┐   ┌────────────┐   ┌──────────────┐           │
-│  │IJTAG Network│   │  Scan      │   │   Monitors   │           │
-│  │   (1687)    │◄──┤  Chains    │   │ (PVT/Ring    │           │
-│  └──────┬──────┘   │  (MUX)     │   │  Oscillator) │           │
-│         │          └─────┬──────┘   └──────┬───────┘           │
+│         ▼                 ▼                   ▼              │
+│  ┌─────────────┐   ┌────────────┐   ┌──────────────┐            │
+│  │IJTAG Network│   │  Scan      │   │   Monitors   │            │
+│  │   (1687)    │◄─┤  Chains    │   │ (PVT/Ring    │            │
+│  └──────┬──────┘   │  (MUX)     │   │  Oscillator) │            │
+│         │          └─────┬──────┘   └──────┬───────┘            │
 │         │                │                  │                   │
 │  ┌──────┴────────────────┴──────────────────┴────────┐          │
-│  │                 Test Access Port                   │          │
-│  │              (JTAG/IJTAG Interface)                │          │
-│  └──────────────────────────┬─────────────────────────┘          │
-│                             │                                    │
-│  ┌──────────┐  ┌───────────┴──┐  ┌──────────┐  ┌──────────┐   │
-│  │  MBIST   │  │   LBIST      │  │  ATPG    │  │  Analog  │   │
-│  │ Engines  │  │   Engines    │  │  Logic   │  │   Test   │   │
-│  └──────────┘  └──────────────┘  └──────────┘  └──────────┘   │
-│                                                                  │
-│                        DUT Fabric                                │
-└──────────────────────────────────────────────────────────────────┘
+│  │                 Test Access Port                  │          │
+│  │              (JTAG/IJTAG Interface)               │          │
+│  └──────────────────────────┬────────────────────────┘          │
+│                             │                                   │
+│  ┌──────────┐  ┌───────────┴──┐  ┌──────────┐  ┌──────────┐     │
+│  │  MBIST   │  │   LBIST      │  │  ATPG    │  │  Analog  │     │
+│  │ Engines  │  │   Engines    │  │  Logic   │  │   Test   │     │
+│  └──────────┘  └──────────────┘  └──────────┘  └──────────┘     │
+│                                                                 │
+│                        DUT Fabric                               │
+└─────────────────────────────────────────────────────────────────┘
                              │
                              ▼
                     ┌─────────────────┐
@@ -65,11 +84,13 @@ The DFT Test Control Processor is an embedded system-on-chip component that orch
 - **ISA:** RISC-V RV32I or simple FSM-based sequencer
 - **Purpose:** Execute test sequences, make adaptive decisions, coordinate modes
 - **Rationale:** RISC-V provides programmability for flexibility; FSM alternative for minimal area/power
+- **Details:** See [uarchitecture.md](uarchitecture.md#2-risc-v-core-microarchitecture) for core selection, interfaces, and pipeline options
 
 #### 2.2 Pattern Storage
 - **Medium:** On-chip ROM for boot/critical patterns, Flash for updateable content
 - **Capacity:** Sized for compressed pattern sets (decompression in sequencer)
 - **Access:** Read-only during normal operation, JTAG-programmable for Flash
+- **Details:** See [uarchitecture.md](uarchitecture.md#3-memory-subsystem) for memory map and interface specifications
 
 #### 2.3 Test Sequencer & Scheduler
 - **Function:** Decompress patterns, apply with SSN-aware timing control
@@ -102,6 +123,8 @@ IDLE → MODE_ENTRY → TEST_EXEC → RESULT_COLLECT → MODE_EXIT → IDLE
 - Process monitors (ring oscillators, voltage sensors)
 - Clock gating infrastructure
 - Power management unit (PMU)
+
+**Implementation:** See [uarchitecture.md](uarchitecture.md#4-clocking-architecture) for clock domains, gating strategy, and CDC handling
 
 #### 3.3 Security & Lock Manager
 **Features:**
@@ -141,6 +164,8 @@ IDLE → MODE_ENTRY → TEST_EXEC → RESULT_COLLECT → MODE_EXIT → IDLE
 - **Topology:** Multiplexed access to functional scan chains
 - **Control:** TCP selects active chains via IJTAG routing
 - **Observation:** Parallel signature analysis for fast compare
+
+**Implementation:** See [uarchitecture.md](uarchitecture.md#10-jtagijtag-integration) for complete JTAG/IJTAG signal specifications
 
 ---
 
@@ -288,13 +313,17 @@ Beyond production test, TCP infrastructure enables:
 
 ### 10. References
 
+**Standards:**
 - IEEE 1149.1: Standard Test Access Port and Boundary-Scan Architecture
 - IEEE 1687: Standard for Access and Control of Instrumentation Embedded within a Semiconductor Device
 - IEEE 1500: Standard Testability Method for Embedded Core-based Integrated Circuits
 
+**Related Documents:**
+- [uarchitecture.md](uarchitecture.md) - Microarchitecture implementation specification
+
 ---
 
-**Document Version:** 1.0
+**Document Version:** 1.1
 **Last Updated:** December 2025
 **Owner:** Architecture Team
 

@@ -1,0 +1,54 @@
+# Simulation outputs
+sim/
+*.vcd
+*.fst
+*.vvp
+*.out
+*.log
+dump.*
+
+# Verilator build artifacts
+obj_dir/
+*.d
+*.o
+*.mk
+*.h
+*.cpp
+Vtcp_*
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.pytest_cache/
+.coverage
+htmlcov/
+*.egg-info/
+
+# Build directories
+build/
+dist/
+waves/
+
+# Editor and IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Nix
+result
+result-*
+.direnv/
+
+# Logs
+*.log
+*.err
+
+# Temporary files
+*.tmp
+*.bak
+*.orig
