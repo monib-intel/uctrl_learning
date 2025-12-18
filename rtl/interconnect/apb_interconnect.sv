@@ -252,9 +252,13 @@ module apb_interconnect (
                     end
                     default: begin
                         // Should not happen (unmapped is checked above)
+                        // Defensive code to catch unexpected conditions
                         m_pready  = 1'b1;
                         m_prdata  = 32'h0;
                         m_pslverr = 1'b1;
+                        `ifdef SIMULATION
+                            $error("APB Interconnect: Invalid slave selection state 0x%b", slave_sel_reg);
+                        `endif
                     end
                 endcase
             end
@@ -281,7 +285,7 @@ module apb_interconnect (
 
         // During ACCESS phase, registered selection should remain stable
         property p_stable_selection;
-            @(posedge pclk) (m_psel && m_penable) |-> (slave_sel_reg == $past(slave_sel_reg));
+            @(posedge pclk) (m_psel && m_penable) |-> $stable(slave_sel_reg);
         endproperty
         assert property (p_stable_selection) else
             $error("APB Interconnect: Slave selection changed during ACCESS phase");
