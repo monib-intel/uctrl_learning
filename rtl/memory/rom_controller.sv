@@ -53,7 +53,9 @@ module rom_controller (
     // Extract word address from byte address
     assign read_addr = rom_addr[ADDR_WIDTH+1:2];
 
-    // Initialize ROM with memory file (synthesis directive)
+    // Initialize ROM with memory file
+    // Note: initial blocks are supported by synthesis tools for memory initialization
+    // Synthesis tools will convert this to technology-specific ROM/RAM initialization
     initial begin
         // Initialize all locations to zero
         for (int i = 0; i < ROM_DEPTH; i++) begin
@@ -61,7 +63,7 @@ module rom_controller (
         end
         
         // Load from .mem file if it exists
-        // This will be replaced by synthesis tools
+        // Synthesis tools replace $readmemh with technology-specific initialization
         `ifdef ROM_INIT_FILE
             $readmemh(`ROM_INIT_FILE, rom_mem);
         `endif
@@ -92,8 +94,11 @@ module rom_controller (
     // 1. March up: Read all addresses in ascending order
     // 2. March down: Read all addresses in descending order
     // 3. Verify: Final read pass
-    // ROM MBIST focuses on detecting inaccessible locations or read failures
-    // rather than data correctness (ROM content is correct by construction)
+    // 
+    // Note: ROM MBIST focuses on detecting inaccessible locations or read failures.
+    // Since ROM content is correct-by-construction (loaded at synthesis), we don't
+    // verify data patterns. The mbist_error flag is reserved for future extensions
+    // (e.g., parity/ECC checking in advanced implementations).
     always_ff @(posedge clk or negedge rst_n) begin
         if (!rst_n) begin
             mbist_state        <= MBIST_IDLE;

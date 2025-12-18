@@ -64,7 +64,9 @@ module test_rom_controller;
         $display("=== ROM Controller Test Started ===");
 
         // Test 1: Initialize ROM with test data using backdoor access
-        // Note: In a real testbench, this would be done via ROM_INIT_FILE
+        // Note: Direct hierarchical access (dut.rom_mem) is used for test convenience.
+        // In production testbenches, use ROM_INIT_FILE mechanism or SystemVerilog
+        // interfaces for better encapsulation and portability.
         $display("\n[Test 1] Initializing ROM with test pattern (backdoor access for testing)");
         for (int i = 0; i < 100; i++) begin
             dut.rom_mem[i] = 32'hDEAD_0000 + i;
@@ -148,7 +150,8 @@ module test_rom_controller;
             begin
                 repeat(MBIST_TIMEOUT_CYCLES) @(posedge clk);
                 $display("[Test 6] TIMEOUT - MBIST did not complete in time");
-                $fatal(1, "MBIST timeout");
+                $error("MBIST timeout after %0d cycles", MBIST_TIMEOUT_CYCLES);
+                $finish;
             end
         join_any
         disable fork;
@@ -188,7 +191,8 @@ module test_rom_controller;
     initial begin
         #100000;
         $display("ERROR: Test timeout!");
-        $fatal(1, "Simulation timeout");
+        $error("Simulation exceeded maximum time limit");
+        $finish;
     end
 
 endmodule
