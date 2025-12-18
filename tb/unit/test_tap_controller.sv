@@ -150,7 +150,7 @@ module test_tap_controller;
         
         // Read back TCP_CTRL
         logic [31:0] readback;
-        readback = shift_dr_32_read();
+        shift_dr_32_read(readback);
         
         if (readback == test_pattern) begin
             $display("[Test 5] PASS - TCP_CTRL write/read: 0x%08h", readback);
@@ -166,7 +166,7 @@ module test_tap_controller;
         
         // Read TCP_STATUS
         logic [31:0] status;
-        status = shift_dr_32_read();
+        shift_dr_32_read(status);
         $display("[Test 6] TCP_STATUS read: 0x%08h (expected 0xDEADBEEF)", status);
         
         if (status == 32'hDEAD_BEEF) begin
@@ -331,8 +331,7 @@ module test_tap_controller;
     endtask
 
     // Shift Data Register (32 bits) - Read
-    function logic [31:0] shift_dr_32_read();
-        logic [31:0] result;
+    task shift_dr_32_read(output logic [31:0] result);
         goto_shift_dr();
         
         for (int i = 0; i < 32; i++) begin
@@ -349,9 +348,7 @@ module test_tap_controller;
         @(posedge TCK);
         TMS = 0;  // Go to RUN-TEST-IDLE
         @(posedge TCK);
-        
-        return result;
-    endfunction
+    endtask
 
     // Test all state transitions
     task test_all_states();

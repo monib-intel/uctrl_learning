@@ -66,7 +66,6 @@ module tap_controller (
     
     // Shift registers for selected data register
     logic [31:0] dr_shift_reg;            // Generic 32-bit shift register
-    logic [5:0]  shift_count;             // Bit counter for shifts
     
     // IDCODE Definition: {version[3:0], part[15:0], manufacturer[10:0], 1'b1}
     // Using a placeholder manufacturer ID and part number
@@ -76,6 +75,9 @@ module tap_controller (
         11'h05F,               // Manufacturer ID (placeholder - JEDEC continuation)
         1'b1                   // LSB must be 1 per IEEE 1149.1
     };
+
+    // TCP Status placeholder value (would be driven by actual TCP logic)
+    localparam logic [31:0] TCP_STATUS_DEFAULT = 32'hDEAD_BEEF;
 
     // Internal control signals
     logic capture_dr;
@@ -163,11 +165,9 @@ module tap_controller (
             dr_bypass    <= 1'b0;
             dr_shift_reg <= 32'h0;
             dr_tcp_ctrl  <= 32'h0;
-            shift_count  <= 6'h0;
         end else begin
             if (capture_dr) begin
                 // Capture: Load the appropriate data register
-                shift_count <= 6'h0;
                 case (current_instruction)
                     BYPASS: begin
                         dr_bypass <= 1'b0;
@@ -190,7 +190,6 @@ module tap_controller (
                 endcase
             end else if (shift_dr) begin
                 // Shift: Shift through the selected register
-                shift_count <= shift_count + 1;
                 case (current_instruction)
                     BYPASS: begin
                         dr_bypass <= TDI;
@@ -224,7 +223,7 @@ module tap_controller (
 
     // TCP Status Register (Read-only, would be driven by actual TCP logic)
     // For now, provide a placeholder value
-    assign dr_tcp_status = 32'hDEAD_BEEF;
+    assign dr_tcp_status = TCP_STATUS_DEFAULT;
 
     // TDO Output Multiplexer
     always_comb begin
