@@ -68,6 +68,11 @@ module test_sram_controller;
     );
 
     // =========================================================================
+    // Test Parameters
+    // =========================================================================
+    localparam int COMB_READ_DELAY = 1;  // Delay for combinational read to settle (ns)
+
+    // =========================================================================
     // Test Variables
     // =========================================================================
     int errors;
@@ -117,7 +122,7 @@ module test_sram_controller;
         sram_req = 1;
         sram_we = 0;
         sram_addr = addr;
-        #1;  // Small delay for combinational logic to settle
+        #COMB_READ_DELAY;  // Small delay for combinational logic to settle
         data = sram_rdata;
         @(posedge clk);
         sram_req = 0;

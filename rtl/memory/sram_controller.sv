@@ -42,6 +42,7 @@ module sram_controller (
     // =========================================================================
     localparam int DEPTH = 2048;        // 2K words (8KB / 4 bytes)
     localparam int ADDR_WIDTH = 11;     // 2^11 = 2048 words
+    localparam int BYTE_OFFSET_BITS = 2; // 2 bits for byte offset in 32-bit word
 
     // =========================================================================
     // Internal Signals
@@ -63,7 +64,6 @@ module sram_controller (
     logic [ADDR_WIDTH-1:0] mbist_addr;
     logic mbist_error;
     logic [31:0] mbist_expected;
-    logic [31:0] mbist_readdata;
     
     // =========================================================================
     // Address Decoding
@@ -114,15 +114,6 @@ module sram_controller (
             sram_rdata = mem[word_addr];
         end else begin
             sram_rdata = 32'h0;
-        end
-    end
-
-    // MBIST read data capture (for error checking)
-    always_ff @(posedge clk or negedge rst_n) begin
-        if (!rst_n) begin
-            mbist_readdata <= 32'h0;
-        end else if (mbist_en && (mbist_state == MBIST_READ0 || mbist_state == MBIST_READ1)) begin
-            mbist_readdata <= mem[mbist_addr];
         end
     end
 
@@ -225,7 +216,7 @@ module sram_controller (
     end
 
     assign mbist_error = ((mbist_state == MBIST_READ0) || (mbist_state == MBIST_READ1)) && 
-                         (mbist_readdata != mbist_expected);
+                         (sram_rdata != mbist_expected);
 
     // MBIST status outputs
     always_ff @(posedge clk or negedge rst_n) begin
@@ -241,9 +232,9 @@ module sram_controller (
             end else if (mbist_state == MBIST_DONE) begin
                 mbist_done <= 1'b1;
             end else if (mbist_error && !mbist_fail) begin
-                // Capture first failing address
+                // Capture first failing address (convert word address to byte address)
                 mbist_fail <= 1'b1;
-                mbist_fail_addr <= {mbist_addr, 2'b00}; // Convert to byte address
+                mbist_fail_addr <= {mbist_addr, {BYTE_OFFSET_BITS{1'b0}}};
             end
         end
     end
