@@ -1,0 +1,33 @@
+// ROM Initialization File
+// Boot code and test patterns for ROM controller
+// Format: Hex values, one per line (32-bit words)
+// Address 0x0000-0x001F: Boot vector and initial code
+
+// Boot vector (address 0x0000)
+00000093  // addi x1, x0, 0     - Initialize x1
+00000113  // addi x2, x0, 0     - Initialize x2
+00100193  // addi x3, x0, 1     - x3 = 1
+00200213  // addi x4, x0, 2     - x4 = 2
+
+// Test pattern area (address 0x0010-0x003F)
+DEADBEEF  // Test pattern 1
+CAFEBABE  // Test pattern 2
+12345678  // Test pattern 3
+ABCDEF00  // Test pattern 4
+
+// Additional boot code (address 0x0020-0x004F)
+00000297  // auipc x5, 0        - Get PC
+00100313  // addi x6, x0, 1     - Counter initialization
+00000393  // addi x7, x0, 0     - Zero register
+
+// Fill remaining with NOPs and pattern
+00000013  // nop
+00000013  // nop
+00000013  // nop
+00000013  // nop
+
+// Repeating test patterns
+55555555  // Pattern marker
+AAAAAAAA  // Pattern marker
+FF00FF00  // Pattern marker
+00FF00FF  // Pattern marker
