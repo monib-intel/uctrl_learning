@@ -258,7 +258,7 @@ module apb_interconnect (
                         m_prdata  = 32'h0;
                         m_pslverr = 1'b1;
                         `ifdef SIMULATION
-                            $error("APB Interconnect: Invalid slave selection state 0b%05b", slave_sel_reg);
+                            $error("APB Interconnect: Invalid slave selection state 0b%5b", slave_sel_reg);
                         `endif
                     end
                 endcase
