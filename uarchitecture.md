@@ -4,6 +4,90 @@
 
 This document describes the microarchitectural implementation details of the TCP, focusing on reusable RTL blocks, interfaces, and timing/reset domains. This specification supports both the RISC-V core option and the FSM-based sequencer alternative.
 
+### 1.1 Block Diagram
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                          TCP Top-Level (tcp_top)                             │
+│                                                                               │
+│  ┌─────────────────────────────────────────────────────────────────────┐    │
+│  │ Clock & Reset Manager                                                │    │
+│  │ ┌──────────┐  ┌──────────┐  ┌──────────┐                           │    │
+│  │ │ clk_cpu  │  │ clk_test │  │ clk_ref  │  PLL/Dividers             │    │
+│  │ └────┬─────┘  └────┬─────┘  └────┬─────┘                           │    │
+│  │      │             │             │        Reset Sync (2-stage)      │    │
+│  │ ┌────┴─────┐  ┌────┴─────┐  ┌────┴─────┐                           │    │
+│  │ │rst_cpu_n │  │rst_test_n│  │rst_cold_n│                           │    │
+│  │ └──────────┘  └──────────┘  └──────────┘                           │    │
+│  └─────────────────────────────────────────────────────────────────────┘    │
+│                                                                               │
+│  ┌──────────────────────┐          ┌────────────────────────────────┐       │
+│  │   RISC-V Core        │          │   APB Interconnect             │       │
+│  │   (RV32I)            │          │                                │       │
+│  │                      │  IMem    │  ┌──────────┐  ┌────────────┐ │       │
+│  │  ┌────────────────┐  ├─────────►│  │  ROM     │  │   Flash    │ │       │
+│  │  │ Register File  │  │          │  │  32KB    │  │   128KB    │ │       │
+│  │  │ (32 x 32-bit)  │  │  DMem    │  └────┬─────┘  └─────┬──────┘ │       │
+│  │  └────────────────┘  ├─────────►│       │              │        │       │
+│  │  ┌────────────────┐  │          │  ┌────┴─────┐  ┌─────┴──────┐ │       │
+│  │  │   ALU/Branch   │  │          │  │  SRAM    │  │  CTRL Regs │ │       │
+│  │  └────────────────┘  │          │  │  8KB     │  │  (MMIO)    │ │       │
+│  └──────────────────────┘          │  └──────────┘  └────────────┘ │       │
+│            │                        │                                │       │
+│            │ Control                │  ┌─────────────────────────┐  │       │
+│            │                        │  │   Diagnostic Buffer     │  │       │
+│            ▼                        │  │   (1K x 32-bit)         │  │       │
+│  ┌──────────────────────┐          │  └─────────────────────────┘  │       │
+│  │ Test Mode Controller │          └────────────────────────────────┘       │
+│  │                      │                                                    │
+│  │  ┌────────────────┐  │          ┌────────────────────────────────┐       │
+│  │  │  State Machine │  │          │  Power Domain Controller       │       │
+│  │  │  (6 states)    │  │          │                                │       │
+│  │  └────────────────┘  │          │  ┌──────┐  ┌──────┐  ┌──────┐ │       │
+│  │                      │◄────────►│  │ CPU  │  │ Test │  │ Mem  │ │       │
+│  │  Mode Arbitration    │          │  │ PD   │  │ PD   │  │ PD   │ │       │
+│  │  BIST Ctrl [31:0]    │          │  └──────┘  └──────┘  └──────┘ │       │
+│  └──────────────────────┘          └────────────────────────────────┘       │
+│            │                                                                  │
+│            ▼                        ┌────────────────────────────────┐       │
+│  ┌──────────────────────┐          │  Diagnostic Collector          │       │
+│  │  JTAG TAP Controller │          │                                │       │
+│  │                      │          │  ┌──────────────────────────┐  │       │
+│  │  ┌────────────────┐  │          │  │  Circular Buffer         │  │       │
+│  │  │  TAP FSM       │  │  IJTAG   │  │  [wr_ptr] ──► [rd_ptr]  │  │       │
+│  │  │  (16 states)   │  ├─────────►│  │  Fail Data Compression   │  │       │
+│  │  └────────────────┘  │          │  └──────────────────────────┘  │       │
+│  │                      │          └────────────────────────────────┘       │
+│  │  IR: BYPASS/IDCODE/  │                                                    │
+│  │      TCP_CTRL/STATUS │                                                    │
+│  └──────────────────────┘                                                    │
+│            ▲                                                                  │
+│            │                                                                  │
+└────────────┼──────────────────────────────────────────────────────────────────┘
+             │
+        ┌────┴─────┐
+        │   JTAG   │  TCK, TMS, TDI, TDO, TRST_n
+        │ External │
+        └──────────┘
+```
+
+**Key Data Paths:**
+- RISC-V ↔ APB ↔ Memories (IMem/DMem)
+- RISC-V → Test Mode Controller → BIST Engines
+- BIST Engines → Diagnostic Collector
+- JTAG → All blocks (IJTAG network)
+
+**Clock Domains:**
+- `clk_cpu`: RISC-V, memories, APB, test controller
+- `clk_test`: JTAG-derived test operations
+- `tck`: JTAG TAP (async)
+
+**Power Domains:**
+- AON: JTAG TAP, POR, clock/reset manager
+- CPU: RISC-V core, SRAM
+- Test: Test mode controller, diagnostic collector
+- Memory: Flash controller
+
 ---
 
 ## 2. RISC-V Core Microarchitecture
