@@ -110,15 +110,16 @@ module test_sram_controller;
         sram_we = 0;
     endtask
 
-    // Read from SRAM
+    // Read from SRAM - combinational read (0 latency)
     task automatic read_sram(input logic [12:0] addr, 
                              output logic [31:0] data);
         @(posedge clk);
         sram_req = 1;
         sram_we = 0;
         sram_addr = addr;
-        @(posedge clk);
+        #1;  // Small delay for combinational logic to settle
         data = sram_rdata;
+        @(posedge clk);
         sram_req = 0;
     endtask
 

@@ -104,21 +104,25 @@ module sram_controller (
         // else: retention mode - hold memory contents
     end
 
-    // Memory read operation
+    // Memory read operation - combinational for single-cycle access
+    always_comb begin
+        if (mbist_en && (mbist_state == MBIST_READ0 || mbist_state == MBIST_READ1)) begin
+            // MBIST read operation (combinational)
+            sram_rdata = mem[mbist_addr];
+        end else if (pd_en && !ret_en && sram_req && !sram_we) begin
+            // Normal read - combinational (single-cycle, zero latency)
+            sram_rdata = mem[word_addr];
+        end else begin
+            sram_rdata = 32'h0;
+        end
+    end
+
+    // MBIST read data capture (for error checking)
     always_ff @(posedge clk or negedge rst_n) begin
         if (!rst_n) begin
-            sram_rdata <= 32'h0;
             mbist_readdata <= 32'h0;
-        end else if (pd_en && !ret_en) begin
-            if (mbist_en) begin
-                // MBIST read operation
-                if (mbist_state == MBIST_READ0 || mbist_state == MBIST_READ1) begin
-                    mbist_readdata <= mem[mbist_addr];
-                end
-            end else if (sram_req && !sram_we) begin
-                // Normal read - combinational (single-cycle)
-                sram_rdata <= mem[word_addr];
-            end
+        end else if (mbist_en && (mbist_state == MBIST_READ0 || mbist_state == MBIST_READ1)) begin
+            mbist_readdata <= mem[mbist_addr];
         end
     end
 
