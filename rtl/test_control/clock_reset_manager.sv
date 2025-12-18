@@ -92,6 +92,9 @@ module clock_reset_manager (
     // =========================================================================
     
     // Clock divider - toggle flip-flops for 50% duty cycle
+    // NOTE: This creates actual clock domains per specification
+    // The cascaded dividers create clean divided clocks with 50% duty cycle
+    // For single-domain designs, consider enable-based counters instead
     logic clk_div2, clk_div4, clk_div8;
     
     // Divide by 2 (toggle at pll_clk rate)
@@ -144,8 +147,11 @@ module clock_reset_manager (
     assign icg_enable = !clk_gate_en || test_mode;
     
     // Latch enable on negative phase to avoid glitches
-    // This is a simplified ICG implementation - in real design, use vendor ICG cells
-    // The latch captures the enable when clock is low, holds it when clock is high
+    // NOTE: always_latch is used here for simulation and clarity
+    // In production synthesis, replace with vendor-specific ICG cells such as:
+    // - SKY130: sky130_fd_sc_hd__dlclkp_1
+    // - Intel: CKLNQD12 or equivalent
+    // - ARM: TLATNCAX or equivalent ICG cell
     always_latch begin
         if (!clk_cpu_pre_gate) begin
             icg_enable_latched = icg_enable;
