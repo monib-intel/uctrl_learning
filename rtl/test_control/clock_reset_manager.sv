@@ -59,7 +59,6 @@ module clock_reset_manager (
     // Clock generation
     logic        clk_cpu_pre_gate;     // CPU clock before gating
     logic        clk_cpu_divided;      // Divided CPU clock
-    logic [2:0]  div_counter;          // Clock divider counter
     
     // ICG (Integrated Clock Gate) signals
     logic        icg_enable;           // Combined enable for ICG
@@ -92,12 +91,33 @@ module clock_reset_manager (
     // Clock Divider Logic
     // =========================================================================
     
-    // Clock divider counter
+    // Clock divider - toggle flip-flops for 50% duty cycle
+    logic clk_div2, clk_div4, clk_div8;
+    
+    // Divide by 2 (toggle at pll_clk rate)
     always_ff @(posedge pll_clk or negedge por_n) begin
         if (!por_n) begin
-            div_counter <= 3'b0;
+            clk_div2 <= 1'b0;
         end else begin
-            div_counter <= div_counter + 1'b1;
+            clk_div2 <= ~clk_div2;
+        end
+    end
+    
+    // Divide by 4 (toggle at clk_div2 rate)
+    always_ff @(posedge clk_div2 or negedge por_n) begin
+        if (!por_n) begin
+            clk_div4 <= 1'b0;
+        end else begin
+            clk_div4 <= ~clk_div4;
+        end
+    end
+    
+    // Divide by 8 (toggle at clk_div4 rate)
+    always_ff @(posedge clk_div4 or negedge por_n) begin
+        if (!por_n) begin
+            clk_div8 <= 1'b0;
+        end else begin
+            clk_div8 <= ~clk_div8;
         end
     end
     
@@ -105,9 +125,9 @@ module clock_reset_manager (
     always_comb begin
         case (clk_div_sel)
             3'b000:  clk_cpu_divided = pll_clk;              // ÷1
-            3'b001:  clk_cpu_divided = div_counter[0];       // ÷2
-            3'b010:  clk_cpu_divided = div_counter[1];       // ÷4
-            3'b011:  clk_cpu_divided = div_counter[2];       // ÷8
+            3'b001:  clk_cpu_divided = clk_div2;             // ÷2
+            3'b010:  clk_cpu_divided = clk_div4;             // ÷4
+            3'b011:  clk_cpu_divided = clk_div8;             // ÷8
             default: clk_cpu_divided = pll_clk;              // Default ÷1
         endcase
     end
@@ -119,21 +139,23 @@ module clock_reset_manager (
     // ICG (Integrated Clock Gate) Cell
     // =========================================================================
     
-    // ICG enable logic: gate when enabled AND not in test mode
-    assign icg_enable = clk_gate_en && !test_mode;
+    // ICG enable logic: gate when clk_gate_en=1 AND not in test_mode
+    // When test_mode=1, force clocks on (disable gating)
+    assign icg_enable = !clk_gate_en || test_mode;
     
-    // Latch enable on negative edge to avoid glitches
+    // Latch enable on negative phase to avoid glitches
     // This is a simplified ICG implementation - in real design, use vendor ICG cells
-    always_ff @(negedge clk_cpu_pre_gate or negedge por_n) begin
-        if (!por_n) begin
-            icg_enable_latched <= 1'b0;
-        end else begin
-            icg_enable_latched <= icg_enable;
+    // The latch captures the enable when clock is low, holds it when clock is high
+    always_latch begin
+        if (!clk_cpu_pre_gate) begin
+            icg_enable_latched = icg_enable;
         end
     end
     
-    // Gated clock output
-    assign clk_cpu = icg_enable_latched ? 1'b0 : clk_cpu_pre_gate;
+    // Gated clock output: AND gate with latched enable
+    // When icg_enable_latched=1, clock passes through
+    // When icg_enable_latched=0, clock is gated (output 0)
+    assign clk_cpu = icg_enable_latched & clk_cpu_pre_gate;
     
     // Test clock: derived from reference clock (simplified - in real design may come from JTAG TCK)
     assign clk_test = clk_ref;
