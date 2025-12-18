@@ -361,29 +361,50 @@ module test_tap_controller;
     // Test all state transitions
     task test_all_states();
         // Test DR path
-        TMS = 1; @(posedge TCK);  // SELECT-DR-SCAN
-        TMS = 0; @(posedge TCK);  // CAPTURE-DR
-        TMS = 0; @(posedge TCK);  // SHIFT-DR
-        TMS = 1; @(posedge TCK);  // EXIT1-DR
-        TMS = 0; @(posedge TCK);  // PAUSE-DR
-        TMS = 1; @(posedge TCK);  // EXIT2-DR
-        TMS = 0; @(posedge TCK);  // SHIFT-DR
-        TMS = 1; @(posedge TCK);  // EXIT1-DR
-        TMS = 1; @(posedge TCK);  // UPDATE-DR
-        TMS = 0; @(posedge TCK);  // RUN-TEST-IDLE
+        TMS = 1;
+        @(posedge TCK);  // SELECT-DR-SCAN
+        TMS = 0;
+        @(posedge TCK);  // CAPTURE-DR
+        TMS = 0;
+        @(posedge TCK);  // SHIFT-DR
+        TMS = 1;
+        @(posedge TCK);  // EXIT1-DR
+        TMS = 0;
+        @(posedge TCK);  // PAUSE-DR
+        TMS = 1;
+        @(posedge TCK);  // EXIT2-DR
+        TMS = 0;
+        @(posedge TCK);  // SHIFT-DR
+        TMS = 1;
+        @(posedge TCK);  // EXIT1-DR
+        TMS = 1;
+        @(posedge TCK);  // UPDATE-DR
+        TMS = 0;
+        @(posedge TCK);  // RUN-TEST-IDLE
         
         // Test IR path
-        TMS = 1; @(posedge TCK);  // SELECT-DR-SCAN
-        TMS = 1; @(posedge TCK);  // SELECT-IR-SCAN
-        TMS = 0; @(posedge TCK);  // CAPTURE-IR
-        TMS = 0; @(posedge TCK);  // SHIFT-IR
-        TMS = 1; @(posedge TCK);  // EXIT1-IR
-        TMS = 0; @(posedge TCK);  // PAUSE-IR
-        TMS = 1; @(posedge TCK);  // EXIT2-IR
-        TMS = 0; @(posedge TCK);  // SHIFT-IR
-        TMS = 1; @(posedge TCK);  // EXIT1-IR
-        TMS = 1; @(posedge TCK);  // UPDATE-IR
-        TMS = 0; @(posedge TCK);  // RUN-TEST-IDLE
+        TMS = 1;
+        @(posedge TCK);  // SELECT-DR-SCAN
+        TMS = 1;
+        @(posedge TCK);  // SELECT-IR-SCAN
+        TMS = 0;
+        @(posedge TCK);  // CAPTURE-IR
+        TMS = 0;
+        @(posedge TCK);  // SHIFT-IR
+        TMS = 1;
+        @(posedge TCK);  // EXIT1-IR
+        TMS = 0;
+        @(posedge TCK);  // PAUSE-IR
+        TMS = 1;
+        @(posedge TCK);  // EXIT2-IR
+        TMS = 0;
+        @(posedge TCK);  // SHIFT-IR
+        TMS = 1;
+        @(posedge TCK);  // EXIT1-IR
+        TMS = 1;
+        @(posedge TCK);  // UPDATE-IR
+        TMS = 0;
+        @(posedge TCK);  // RUN-TEST-IDLE
         
         $display("  Completed full state machine traversal");
     endtask
