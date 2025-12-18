@@ -69,19 +69,6 @@ module risc_v_core (
     logic [31:0] branch_target;
     logic        stall;
     
-    // Memory Control
-    logic        mem_read, mem_write;
-    logic [31:0] mem_read_data;
-    
-    // State Machine
-    typedef enum logic [1:0] {
-        FETCH,
-        EXECUTE,
-        MEMORY,
-        WRITEBACK
-    } state_t;
-    state_t state, state_next;
-    
     // WFI (Wait For Interrupt) state
     logic wfi_state;
     
@@ -205,8 +192,6 @@ module risc_v_core (
         alu_op2 = rs2_data;
         reg_write_en = 1'b0;
         reg_write_data = alu_result;
-        mem_read = 1'b0;
-        mem_write = 1'b0;
         branch_taken = 1'b0;
         branch_target = pc_reg + 32'd4;
         pc_next = pc_reg + 32'd4;
@@ -231,7 +216,6 @@ module risc_v_core (
             
             7'b0000011: begin // LOAD
                 alu_op2 = imm_i;
-                mem_read = 1'b1;
                 dmem_req = 1'b1;
                 dmem_addr = mem_addr_temp;
                 reg_write_en = 1'b1;
@@ -251,7 +235,6 @@ module risc_v_core (
             
             7'b0100011: begin // STORE
                 alu_op2 = imm_s;
-                mem_write = 1'b1;
                 dmem_req = 1'b1;
                 dmem_we = 1'b1;
                 dmem_addr = mem_addr_temp;
@@ -259,9 +242,9 @@ module risc_v_core (
                 
                 // Store byte enable based on funct3
                 case (funct3)
-                    3'b000: dmem_be = 4'b0001 << mem_addr_temp[1:0]; // SB
-                    3'b001: dmem_be = 4'b0011 << mem_addr_temp[1:0]; // SH
-                    3'b010: dmem_be = 4'b1111;                        // SW
+                    3'b000: dmem_be = 4'b0001 << (mem_addr_temp[1:0] & 2'b11); // SB - mask to prevent overflow
+                    3'b001: dmem_be = 4'b0011 << (mem_addr_temp[1:0] & 2'b10); // SH - only bit 1 matters
+                    3'b010: dmem_be = 4'b1111;                                  // SW
                     default: dmem_be = 4'b0000;
                 endcase
                 
