@@ -279,9 +279,9 @@ module apb_interconnect (
         assert property (p_penable_after_psel) else
             $error("APB Interconnect: PENABLE asserted without PSEL");
 
-        // During ACCESS phase, selection should remain stable
+        // During ACCESS phase, registered selection should remain stable
         property p_stable_selection;
-            @(posedge pclk) (m_psel && m_penable) |-> (slave_sel_reg == $past(slave_sel));
+            @(posedge pclk) (m_psel && m_penable) |-> (slave_sel_reg == $past(slave_sel_reg));
         endproperty
         assert property (p_stable_selection) else
             $error("APB Interconnect: Slave selection changed during ACCESS phase");

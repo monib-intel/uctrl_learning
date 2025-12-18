@@ -312,11 +312,10 @@ module test_apb_interconnect;
         @(posedge pclk);
         m_penable = 1'b1;
         
-        // Wait for ready
-        @(posedge pclk);
-        while (!m_pready) begin
-            @(posedge pclk);
-        end
+        // Wait for ready (check immediately in same cycle)
+        wait (m_pready);
+        @(posedge pclk);  // Capture data at clock edge when ready is asserted
+        #1;  // Small delay to allow outputs to settle
         
         data = m_prdata;
         error = m_pslverr;
@@ -347,11 +346,10 @@ module test_apb_interconnect;
         @(posedge pclk);
         m_penable = 1'b1;
         
-        // Wait for ready
-        @(posedge pclk);
-        while (!m_pready) begin
-            @(posedge pclk);
-        end
+        // Wait for ready (check immediately in same cycle)
+        wait (m_pready);
+        @(posedge pclk);  // Capture status at clock edge when ready is asserted
+        #1;  // Small delay to allow outputs to settle
         
         error = m_pslverr;
         
