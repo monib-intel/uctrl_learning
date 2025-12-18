@@ -174,6 +174,16 @@ module test_apb_interconnect;
     int errors;
     int tests_passed;
     int tests_failed;
+    
+    // Slave address width parameters (for test data pattern generation)
+    localparam int ROM_ADDR_WIDTH  = 15;  // 32KB = 2^15 bytes
+    localparam int FLASH_ADDR_WIDTH = 17; // 128KB = 2^17 bytes
+    localparam int SRAM_ADDR_WIDTH  = 13; // 8KB = 2^13 bytes
+    localparam int CTRL_ADDR_WIDTH  = 12; // 4KB = 2^12 bytes
+    localparam int DIAG_ADDR_WIDTH  = 12; // 4KB = 2^12 bytes
+    
+    // Simulation timeout
+    localparam int SIMULATION_TIMEOUT = 100000; // ns
 
     // =========================================================================
     // Slave Mockups (Simple Responders)
@@ -191,7 +201,7 @@ module test_apb_interconnect;
         end else begin
             if (s0_psel && s0_penable) begin
                 s0_pready  <= 1'b1;
-                s0_prdata  <= 32'hA000_0000 | s0_paddr[15:0];  // ROM pattern (15-bit addr)
+                s0_prdata  <= 32'hA000_0000 | s0_paddr[ROM_ADDR_WIDTH:0];
                 s0_pslverr <= 1'b0;
             end else begin
                 s0_pready  <= 1'b0;
@@ -211,7 +221,7 @@ module test_apb_interconnect;
         end else begin
             if (s1_psel && s1_penable) begin
                 s1_pready  <= 1'b1;
-                s1_prdata  <= 32'hB000_0000 | s1_paddr[16:0];  // Flash pattern (17-bit addr)
+                s1_prdata  <= 32'hB000_0000 | s1_paddr[FLASH_ADDR_WIDTH:0];
                 s1_pslverr <= 1'b0;
             end else begin
                 s1_pready  <= 1'b0;
@@ -231,7 +241,7 @@ module test_apb_interconnect;
         end else begin
             if (s2_psel && s2_penable) begin
                 s2_pready  <= 1'b1;
-                s2_prdata  <= 32'hC000_0000 | s2_paddr[12:0];  // SRAM pattern (13-bit addr)
+                s2_prdata  <= 32'hC000_0000 | s2_paddr[SRAM_ADDR_WIDTH:0];
                 s2_pslverr <= 1'b0;
             end else begin
                 s2_pready  <= 1'b0;
@@ -251,7 +261,7 @@ module test_apb_interconnect;
         end else begin
             if (s3_psel && s3_penable) begin
                 s3_pready  <= 1'b1;
-                s3_prdata  <= 32'hD000_0000 | s3_paddr[11:0];  // CTRL pattern (12-bit addr)
+                s3_prdata  <= 32'hD000_0000 | s3_paddr[CTRL_ADDR_WIDTH:0];
                 s3_pslverr <= 1'b0;
             end else begin
                 s3_pready  <= 1'b0;
@@ -271,7 +281,7 @@ module test_apb_interconnect;
         end else begin
             if (s4_psel && s4_penable) begin
                 s4_pready  <= 1'b1;
-                s4_prdata  <= 32'hE000_0000 | s4_paddr[11:0];  // DIAG pattern (12-bit addr)
+                s4_prdata  <= 32'hE000_0000 | s4_paddr[DIAG_ADDR_WIDTH:0];
                 s4_pslverr <= 1'b0;
             end else begin
                 s4_pready  <= 1'b0;
@@ -553,7 +563,7 @@ module test_apb_interconnect;
     // Timeout Watchdog
     // =========================================================================
     initial begin
-        #100000;
+        #SIMULATION_TIMEOUT;
         $display("ERROR: Test timeout!");
         $error("Simulation exceeded maximum time limit");
         $finish;
