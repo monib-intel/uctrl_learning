@@ -71,7 +71,7 @@ module test_rom_controller;
         $display("\n[Test 2] Testing basic read operation");
         @(posedge clk);
         rom_req  = 1;
-        rom_addr = 15'h0000;  // Word address 0 (byte address 0x0000)
+        rom_addr = 15'h0000;  // Byte address 0x0000 (word 0)
         @(posedge clk);
         rom_req  = 0;
         @(posedge clk);
@@ -88,7 +88,7 @@ module test_rom_controller;
         for (int i = 0; i < 5; i++) begin
             @(posedge clk);
             rom_req  = 1;
-            rom_addr = (i * 4);  // Byte addresses: 0, 4, 8, 12, 16
+            rom_addr = (i * 4);  // Byte addresses: 0, 4, 8, 12, 16 (words 0-4)
             @(posedge clk);
             rom_req  = 0;
             @(posedge clk);
@@ -105,7 +105,7 @@ module test_rom_controller;
         $display("\n[Test 4] Verifying 1-cycle read latency");
         @(posedge clk);
         rom_req  = 1;
-        rom_addr = 15'h0010;  // Byte address 0x0010 = word 4
+        rom_addr = 15'h0010;  // Byte address 0x0010 (word 4)
         @(posedge clk);
         // At this clock edge, data should be ready
         if (rom_ready && rom_rdata == 32'hDEAD_0004) begin
@@ -119,10 +119,10 @@ module test_rom_controller;
 
         // Test 5: Read from different addresses
         $display("\n[Test 5] Testing random address access");
-        test_read_addr(15'h0000, 32'hDEAD_0000);  // Word 0
-        test_read_addr(15'h0020, 32'hDEAD_0008);  // Word 8  
-        test_read_addr(15'h0040, 32'hDEAD_0010);  // Word 16
-        test_read_addr(15'h0100, 32'hDEAD_0040);  // Word 64
+        test_read_addr(15'h0000, 32'hDEAD_0000);  // Byte addr 0x0000 (word 0)
+        test_read_addr(15'h0020, 32'hDEAD_0008);  // Byte addr 0x0020 (word 8)  
+        test_read_addr(15'h0040, 32'hDEAD_0010);  // Byte addr 0x0040 (word 16)
+        test_read_addr(15'h0100, 32'hDEAD_0040);  // Byte addr 0x0100 (word 64)
 
         // Test 6: MBIST functionality
         $display("\n[Test 6] Testing MBIST functionality");
